@@ -1,0 +1,1790 @@
+/* ==========================================================================
+   SIMULAB // DC-3000 SCADA & DIGITAL TWIN DESIGN SYSTEM
+   Theme: Industrial Obsidian Slate & Neon Instrumentation (60 FPS Ready)
+   ========================================================================== */
+
+:root {
+  /* Core Color Palette */
+  --bg-primary: #070a12;
+  --bg-secondary: #0b0f19;
+  --bg-panel: #111827;
+  --bg-card: rgba(17, 24, 39, 0.95);
+  --bg-card-hover: #162032;
+  --border-subtle: #1f2937;
+  --border-medium: #374151;
+  --border-bright: #4b5563;
+
+  /* SCADA Instrument Accent Colors */
+  --cyan: #06b6d4;
+  --cyan-glow: rgba(6, 182, 212, 0.35);
+  --cyan-dim: rgba(6, 182, 212, 0.12);
+
+  --amber: #f59e0b;
+  --amber-glow: rgba(245, 158, 11, 0.35);
+  --amber-dim: rgba(245, 158, 11, 0.12);
+
+  --emerald: #10b981;
+  --emerald-glow: rgba(16, 185, 129, 0.35);
+  --emerald-dim: rgba(16, 185, 129, 0.12);
+
+  --crimson: #ef4444;
+  --crimson-glow: rgba(239, 68, 68, 0.4);
+  --crimson-dim: rgba(239, 68, 68, 0.15);
+
+  --purple: #a855f7;
+  --purple-glow: rgba(168, 85, 247, 0.35);
+  --purple-dim: rgba(168, 85, 247, 0.12);
+
+  /* Typography Colors */
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  --text-dim: #6b7280;
+  --text-inverse: #050811;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+
+  /* Shadows & Glassmorphism */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.7);
+  --glass-blur: blur(12px);
+
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base Styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 14px;
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body.scada-dark-theme {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary);
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.05) 0%, transparent 60%),
+    radial-gradient(circle at 100% 100%, rgba(245, 158, 11, 0.03) 0%, transparent 50%),
+    linear-gradient(rgba(17, 24, 39, 0.4) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17, 24, 39, 0.4) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+  overflow-x: hidden;
+}
+
+/* Custom High-Tech Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cyan);
+}
+
+/* Utility Classes */
+.cyan-txt { color: var(--cyan); }
+.amber-txt { color: var(--amber); }
+.emerald-txt { color: var(--emerald); }
+.danger-txt { color: var(--crimson); }
+.purple-txt { color: var(--purple); }
+
+.code-sym {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ==========================================================================
+   1. SCADA TOP HEADER BAR
+   ========================================================================== */
+.scada-header {
+  height: 64px;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-md);
+}
+
+.header-branding {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.scada-beacon {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--emerald);
+  box-shadow: 0 0 10px var(--emerald);
+  position: relative;
+}
+
+.scada-beacon.active::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  border: 1.5px solid var(--emerald);
+  animation: pulseBeacon 2s infinite ease-out;
+}
+
+@keyframes pulseBeacon {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+.scada-beacon.danger {
+  background-color: var(--crimson);
+  box-shadow: 0 0 12px var(--crimson);
+}
+.scada-beacon.danger::after {
+  border-color: var(--crimson);
+}
+
+.brand-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.brand-title .highlight {
+  color: var(--cyan);
+  text-shadow: 0 0 12px var(--cyan-glow);
+}
+
+.brand-subtitle {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+}
+
+/* Header Control Switches & E-Stop */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.control-group-unit {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.unit-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.scada-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-medium);
+  border-radius: 6px;
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.scada-toggle-btn:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--border-bright);
+}
+
+.btn-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--text-dim);
+  transition: all var(--transition-fast);
+}
+
+.btn-led.on {
+  background-color: var(--emerald);
+  box-shadow: 0 0 8px var(--emerald);
+}
+
+.btn-led.off {
+  background-color: #374151;
+}
+
+.scada-toggle-btn.active-state {
+  border-color: rgba(6, 182, 212, 0.5);
+  background-color: rgba(6, 182, 212, 0.08);
+}
+
+.scada-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-medium);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.scada-icon-btn:hover {
+  color: var(--text-main);
+  border-color: var(--cyan);
+}
+
+.scada-icon-btn.muted {
+  color: var(--text-dim);
+  border-color: var(--border-subtle);
+}
+
+.icon-svg {
+  width: 14px;
+  height: 14px;
+}
+
+.scada-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-medium);
+  border-radius: 6px;
+  color: var(--text-main);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.scada-action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.scada-action-btn:not(:disabled):hover {
+  border-color: var(--amber);
+  color: var(--amber);
+  background-color: var(--amber-dim);
+}
+
+/* Heavy-Duty Industrial E-Stop Pushbutton */
+.scada-estop-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid #7f1d1d;
+  background: radial-gradient(circle at 35% 35%, #ef4444 0%, #b91c1c 65%, #7f1d1d 100%);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4), inset 0 2px 3px rgba(255, 255, 255, 0.3), inset 0 -3px 5px rgba(0, 0, 0, 0.6);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  position: relative;
+}
+
+.scada-estop-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(239, 68, 68, 0.6), inset 0 2px 3px rgba(255, 255, 255, 0.4);
+}
+
+.scada-estop-btn:active {
+  transform: translateY(2px) scale(0.96);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3), inset 0 3px 6px rgba(0, 0, 0, 0.7);
+}
+
+.estop-core {
+  font-family: var(--font-sans);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Header Status Pill */
+.header-status-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.status-indicator-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--border-medium);
+  background-color: rgba(17, 24, 39, 0.8);
+}
+
+.status-indicator-pill.normal {
+  border-color: rgba(16, 185, 129, 0.4);
+  color: var(--emerald);
+  background-color: var(--emerald-dim);
+}
+
+.status-indicator-pill.warning {
+  border-color: rgba(245, 158, 11, 0.5);
+  color: var(--amber);
+  background-color: var(--amber-dim);
+}
+
+.status-indicator-pill.danger {
+  border-color: rgba(239, 68, 68, 0.6);
+  color: var(--crimson);
+  background-color: var(--crimson-dim);
+  animation: flashDanger 1s infinite alternate;
+}
+
+@keyframes flashDanger {
+  0% { box-shadow: 0 0 4px var(--crimson-glow); }
+  100% { box-shadow: 0 0 16px var(--crimson-glow); }
+}
+
+.pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.status-clock {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+/* ==========================================================================
+   2. SAFETY WARNING BANNER
+   ========================================================================== */
+.safety-banner-wrapper {
+  background: linear-gradient(90deg, #7f1d1d 0%, #991b1b 50%, #7f1d1d 100%);
+  border-bottom: 2px solid var(--crimson);
+  padding: 10px 24px;
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+  animation: slideDownBanner 0.25s ease-out;
+  position: relative;
+  z-index: 90;
+}
+
+@keyframes slideDownBanner {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.safety-banner-content {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.banner-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.3);
+  color: #fecaca;
+  flex-shrink: 0;
+}
+
+.banner-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.banner-text-details {
+  flex: 1;
+}
+
+.banner-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.banner-desc {
+  font-size: 0.78rem;
+  color: #fee2e2;
+  margin-top: 2px;
+}
+
+.banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.banner-action-btn {
+  background-color: #fff;
+  color: #991b1b;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.banner-action-btn:hover {
+  background-color: #fee2e2;
+  transform: translateY(-1px);
+}
+
+.banner-dismiss-btn {
+  background: transparent;
+  border: none;
+  color: #fecaca;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.banner-dismiss-btn:hover {
+  color: #fff;
+}
+
+/* ==========================================================================
+   3. MAIN WORKSTATION VIEWPORT GRID
+   ========================================================================== */
+.scada-viewport-grid {
+  display: grid;
+  grid-template-columns: 310px 1fr 480px;
+  gap: 14px;
+  padding: 14px 20px;
+  max-width: 1740px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.viewport-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Generic Panel & Card Design */
+.card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.scada-panel {
+  padding: 12px 14px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.panel-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--cyan);
+}
+
+.panel-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-main);
+  text-transform: uppercase;
+}
+
+.panel-tag {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.06em;
+}
+
+.panel-tag.cyan {
+  background-color: var(--cyan-dim);
+  color: var(--cyan);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+/* ==========================================================================
+   4. LEFT COLUMN: CONTROLS & GUIDED PRESETS
+   ========================================================================== */
+
+/* Guided Presets */
+.guided-panel {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.95) 0%, rgba(15, 23, 42, 0.9) 100%);
+}
+
+.guided-btn-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.guided-preset-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background-color: rgba(31, 41, 55, 0.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-main);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.guided-preset-btn:hover {
+  background-color: rgba(31, 41, 55, 0.9);
+  border-color: var(--border-bright);
+}
+
+.guided-preset-btn.active {
+  background-color: rgba(6, 182, 212, 0.1);
+  border-color: var(--cyan);
+  box-shadow: inset 0 0 8px rgba(6, 182, 212, 0.15);
+}
+
+.preset-num {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--cyan);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: rgba(6, 182, 212, 0.12);
+}
+
+.preset-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.preset-title {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.preset-sub {
+  font-size: 0.62rem;
+  color: var(--text-dim);
+}
+
+/* Control Cards (Sliders, Ticks, Buttons) */
+.control-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.control-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.control-dot.cyan { background-color: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+.control-dot.amber { background-color: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.control-dot.emerald { background-color: var(--emerald); box-shadow: 0 0 6px var(--emerald); }
+
+.control-badge {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.control-badge.cyan {
+  background-color: var(--cyan-dim);
+  color: var(--cyan);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.control-badge.amber {
+  background-color: var(--amber-dim);
+  color: var(--amber);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.control-badge.emerald {
+  background-color: var(--emerald-dim);
+  color: var(--emerald);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-value {
+  font-size: 1.05rem;
+}
+
+.badge-unit {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Custom Styled Range Sliders */
+.scada-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background-color: #1f2937;
+  outline: none;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.scada-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #fff;
+  border: 2px solid var(--border-subtle);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.scada-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #fff;
+  border: 2px solid var(--border-subtle);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.scada-range:hover::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+.cyan-slider::-webkit-slider-thumb {
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan);
+}
+.amber-slider::-webkit-slider-thumb {
+  border-color: var(--amber);
+  box-shadow: 0 0 10px var(--amber);
+}
+.emerald-slider::-webkit-slider-thumb {
+  border-color: var(--emerald);
+  box-shadow: 0 0 10px var(--emerald);
+}
+
+.slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  padding: 0 2px;
+}
+
+.slider-ticks .rated {
+  color: var(--cyan);
+  font-weight: 700;
+}
+.slider-ticks .warning {
+  color: var(--amber);
+}
+.slider-ticks .danger {
+  color: var(--crimson);
+  font-weight: 700;
+}
+
+/* Step Buttons and Quick Preset Pills */
+.step-btn-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.step-group {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.step-btn {
+  padding: 4px;
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.step-btn:hover {
+  background-color: #374151;
+  color: var(--text-main);
+  border-color: var(--border-bright);
+}
+
+.preset-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pill-btn {
+  flex: 1;
+  min-width: 45px;
+  padding: 3px 6px;
+  background-color: rgba(31, 41, 55, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.pill-btn:hover {
+  background-color: var(--bg-card-hover);
+  color: var(--text-main);
+}
+
+.pill-btn.active {
+  background-color: rgba(6, 182, 212, 0.15);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.pill-btn.danger {
+  color: #f87171;
+}
+.pill-btn.danger:hover {
+  background-color: var(--crimson-dim);
+  border-color: var(--crimson);
+}
+
+/* ==========================================================================
+   5. CENTER COLUMN: MOTOR VISUALIZER & EQUIVALENT CIRCUIT
+   ========================================================================== */
+.visualizer-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.visualizer-header {
+  margin-bottom: 8px;
+}
+
+.visualizer-tabs-container {
+  display: flex;
+  gap: 6px;
+}
+
+.vis-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: #1a2234;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vis-tab-btn:hover {
+  color: var(--text-main);
+  border-color: var(--border-medium);
+}
+
+.vis-tab-btn.active {
+  background-color: rgba(6, 182, 212, 0.15);
+  border-color: var(--cyan);
+  color: var(--cyan);
+  box-shadow: inset 0 0 10px rgba(6, 182, 212, 0.2);
+}
+
+.vis-tab-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.vis-hud-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-dim);
+}
+
+.hud-dot.pulsing {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--emerald);
+  box-shadow: 0 0 6px var(--emerald);
+}
+
+/* Canvas Stage Wrapper */
+.canvas-stage-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 440px;
+  flex: 1;
+  background-color: #080c14;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#motorCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Canvas HUD Overlay */
+.canvas-overlay-hud {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.hud-metric {
+  background-color: rgba(11, 15, 25, 0.85);
+  border: 1px solid rgba(55, 65, 81, 0.6);
+  border-left: 2px solid var(--cyan);
+  padding: 4px 8px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+}
+
+.hud-k {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+}
+
+.hud-v {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* Visualizer Footer Strip */
+.visualizer-footer-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background-color: rgba(17, 24, 39, 0.6);
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+}
+
+.vis-subgauge {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.subgauge-title {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+}
+
+.scada-progress-bar {
+  width: 100%;
+  height: 6px;
+  background-color: #1f2937;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.05s linear;
+}
+
+.progress-fill.amber-glow {
+  background-color: var(--amber);
+  box-shadow: 0 0 8px var(--amber);
+}
+
+.progress-fill.emerald-glow {
+  background-color: var(--emerald);
+  box-shadow: 0 0 8px var(--emerald);
+}
+
+.progress-fill.cyan-glow {
+  background-color: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+}
+
+.subgauge-val {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   6. RIGHT COLUMN: SCADA TELEMETRY & MULTI-TABBED GRAPHS
+   ========================================================================== */
+
+/* 2x3 Telemetry Grid */
+.telemetry-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.telemetry-card {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(135deg, rgba(26, 34, 52, 0.8) 0%, rgba(17, 24, 39, 0.95) 100%);
+  position: relative;
+}
+
+.telemetry-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: currentColor;
+  opacity: 0.8;
+}
+
+.telemetry-card.cyan-border { color: var(--cyan); border-color: rgba(6, 182, 212, 0.3); }
+.telemetry-card.emerald-border { color: var(--emerald); border-color: rgba(16, 185, 129, 0.3); }
+.telemetry-card.amber-border { color: var(--amber); border-color: rgba(245, 158, 11, 0.3); }
+.telemetry-card.purple-border { color: var(--purple); border-color: rgba(168, 85, 247, 0.3); }
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tel-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.tel-sym {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.card-body {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.tel-numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.65rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.cyan-num { color: #e0f2fe; text-shadow: 0 0 10px var(--cyan-glow); }
+.emerald-num { color: #d1fae5; text-shadow: 0 0 10px var(--emerald-glow); }
+.amber-num { color: #fef3c7; text-shadow: 0 0 10px var(--amber-glow); }
+.purple-num { color: #f3e8ff; text-shadow: 0 0 10px var(--purple-glow); }
+
+.tel-unit {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.card-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.progress-track {
+  width: 100%;
+  height: 4px;
+  background-color: #1f2937;
+  border-radius: 2px;
+  position: relative;
+  overflow: visible;
+}
+
+.cyan-fill { background-color: var(--cyan); }
+.emerald-fill { background-color: var(--emerald); }
+.amber-fill { background-color: var(--amber); }
+.purple-fill { background-color: var(--purple); }
+
+.rated-marker {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background-color: var(--cyan);
+  box-shadow: 0 0 4px var(--cyan);
+  z-index: 2;
+}
+
+.danger-marker {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background-color: var(--crimson);
+  box-shadow: 0 0 4px var(--crimson);
+  z-index: 2;
+}
+
+.card-foot-meta {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--text-dim);
+}
+
+.card-foot-meta .rated-txt {
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+.card-foot-meta .danger-txt {
+  color: var(--crimson);
+  font-weight: 700;
+}
+
+/* Secondary Telemetry Strip */
+.secondary-telemetry-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.sec-badge {
+  background-color: rgba(26, 34, 52, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sec-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+
+.sec-val {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* Multi-Tabbed Interactive Canvas Graph Plotter */
+.graph-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.graph-header-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.graph-tab-btn {
+  padding: 6px 4px;
+  background-color: #1a2234;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.graph-tab-btn:hover {
+  color: var(--text-main);
+  background-color: #243048;
+}
+
+.graph-tab-btn.active {
+  background-color: rgba(6, 182, 212, 0.15);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.graph-sub-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.graph-legend-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.legend-chip.cyan .legend-dot { background-color: var(--cyan); box-shadow: 0 0 4px var(--cyan); }
+.legend-chip.emerald .legend-dot { background-color: var(--emerald); box-shadow: 0 0 4px var(--emerald); }
+.legend-chip.amber .legend-dot { background-color: var(--amber); box-shadow: 0 0 4px var(--amber); }
+
+.legend-chip.dashed .legend-line {
+  width: 14px;
+  height: 0;
+  border-top: 1.5px dashed var(--text-dim);
+}
+
+.graph-action-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.graph-btn {
+  padding: 3px 8px;
+  background-color: #1f2937;
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.graph-btn:hover {
+  background-color: #374151;
+  color: var(--text-main);
+}
+
+.graph-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  background-color: #080c14;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+#graphCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.graph-tooltip {
+  position: absolute;
+  display: none;
+  background-color: rgba(11, 15, 25, 0.95);
+  border: 1px solid var(--cyan);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: #fff;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+  z-index: 20;
+}
+
+/* ==========================================================================
+   7. LIVE ENGINEERING INSIGHT BANNER
+   ========================================================================== */
+.engineering-insight-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 20px 14px 20px;
+  padding: 10px 16px;
+  background: linear-gradient(90deg, rgba(30, 41, 59, 0.85) 0%, rgba(17, 24, 39, 0.95) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-left: 3px solid #3b82f6;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.insight-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #60a5fa;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.insight-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.insight-body {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #e2e8f0;
+}
+
+.insight-body strong {
+  color: #93c5fd;
+}
+
+/* ==========================================================================
+   8. BOTTOM SECTION: VIRTUAL LAB OBSERVATIONS SHEET & TABLE
+   ========================================================================== */
+.observation-panel {
+  margin: 0 20px 20px 20px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+}
+
+.observation-header {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.obs-title-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.obs-counter-pill {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--emerald);
+  background-color: var(--emerald-dim);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.obs-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.obs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.obs-btn.primary {
+  background-color: var(--emerald);
+  color: #064e3b;
+  box-shadow: 0 2px 8px var(--emerald-glow);
+}
+.obs-btn.primary:hover {
+  background-color: #34d399;
+  transform: translateY(-1px);
+}
+
+.obs-btn.accent {
+  background-color: var(--cyan);
+  color: #083344;
+  box-shadow: 0 2px 8px var(--cyan-glow);
+}
+.obs-btn.accent:hover {
+  background-color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.obs-btn.secondary {
+  background-color: #1f2937;
+  border-color: #374151;
+  color: var(--text-main);
+}
+.obs-btn.secondary:hover {
+  background-color: #374151;
+  border-color: var(--border-bright);
+}
+
+.obs-btn.danger {
+  background-color: var(--crimson-dim);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+.obs-btn.danger:hover {
+  background-color: rgba(239, 68, 68, 0.25);
+  color: #fff;
+}
+
+.kbd-hint {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  background-color: rgba(0, 0, 0, 0.25);
+  padding: 2px 4px;
+  border-radius: 3px;
+  margin-left: 2px;
+}
+
+/* Analytical Highlight Bar */
+.obs-analytical-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 8px 14px;
+  background-color: rgba(11, 15, 25, 0.6);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.72rem;
+}
+
+.ana-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ana-label {
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.ana-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* Scrollable Table */
+.table-scroll-container {
+  max-height: 260px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.scada-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  text-align: left;
+}
+
+.scada-table thead {
+  position: sticky;
+  top: 0;
+  background-color: #151d2f;
+  z-index: 10;
+}
+
+.scada-table th {
+  padding: 8px 10px;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-medium);
+  white-space: nowrap;
+}
+
+.scada-table td {
+  padding: 8px 10px;
+  color: var(--text-main);
+  border-bottom: 1px solid rgba(31, 41, 55, 0.6);
+  white-space: nowrap;
+}
+
+.scada-table tbody tr:hover {
+  background-color: rgba(31, 41, 55, 0.5);
+}
+
+.scada-table tbody tr.peak-eff {
+  background-color: rgba(16, 185, 129, 0.12);
+  border-left: 3px solid var(--emerald);
+}
+
+.scada-table .col-del-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 0.85rem;
+}
+.scada-table .col-del-btn:hover {
+  color: var(--crimson);
+}
+
+.badge-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+.badge-tag.normal { background-color: var(--emerald-dim); color: var(--emerald); }
+.badge-tag.warning { background-color: var(--amber-dim); color: var(--amber); }
+.badge-tag.danger { background-color: var(--crimson-dim); color: #f87171; }
+
+.empty-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 36px 20px;
+  color: var(--text-dim);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+}
+
+.placeholder-icon {
+  width: 28px;
+  height: 28px;
+  opacity: 0.4;
+}
+
+/* ==========================================================================
+   9. FOOTER
+   ========================================================================== */
+.scada-footer {
+  margin-top: auto;
+  height: 38px;
+  background-color: #080c14;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  font-size: 0.68rem;
+  color: var(--text-dim);
+}
+
+.footer-shortcuts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.footer-shortcuts kbd {
+  background-color: #1f2937;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid #374151;
+}
+
+.footer-build {
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+}
+
+/* ==========================================================================
+   10. PRINT STYLESHEET (PROFESSIONAL LAB REPORT)
+   ========================================================================== */
+.print-only-report-header {
+  display: none;
+}
+
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .scada-header,
+  .safety-banner-wrapper,
+  .viewport-col,
+  .engineering-insight-bar,
+  .obs-toolbar,
+  .obs-analytical-bar,
+  .scada-footer,
+  .col-del {
+    display: none !important;
+  }
+
+  .print-only-report-header {
+    display: block !important;
+    padding: 20px 0;
+    border-bottom: 2px solid #000;
+    margin-bottom: 20px;
+  }
+
+  .print-title-row h2 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .print-title-row h3 {
+    font-size: 1.0rem;
+    font-weight: 600;
+    text-align: center;
+    color: #4b5563;
+    margin-bottom: 16px;
+  }
+
+  .print-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 0.85rem;
+  }
+
+  .observation-panel {
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .table-scroll-container {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .scada-table {
+    width: 100% !important;
+    color: #000 !important;
+    border: 1px solid #000;
+  }
+
+  .scada-table th {
+    background-color: #f3f4f6 !important;
+    color: #000 !important;
+    border: 1px solid #000 !important;
+  }
+
+  .scada-table td {
+    color: #000 !important;
+    border: 1px solid #d1d5db !important;
+  }
+}
+
+/* ==========================================================================
+   11. RESPONSIVENESS
+   ========================================================================== */
+@media (max-width: 1440px) {
+  .scada-viewport-grid {
+    grid-template-columns: 290px 1fr 430px;
+    gap: 10px;
+    padding: 10px 14px;
+  }
+  .telemetry-card-grid {
+    gap: 8px;
+  }
+  .tel-numeric {
+    font-size: 1.45rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .scada-viewport-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .col-controls {
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .col-visualizer {
+    grid-column: span 1;
+  }
+  .col-telemetry {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 860px) {
+  .scada-viewport-grid {
+    grid-template-columns: 1fr;
+  }
+  .col-controls {
+    grid-template-columns: 1fr;
+  }
+  .telemetry-card-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .header-controls {
+    display: none;
+  }
+}

@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIMULAB // DC-3000 Interactive DC Motor Testing & Control Simulator</title>
+  <meta name="description" content="Industrial digital twin and SCADA simulator for Separately Excited DC Motor testing, speed control, flux weakening, and dynamometer load analysis.">
+  <!-- Google Fonts: Inter for UI & JetBrains Mono for High-Precision SCADA Telemetry -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="scada-dark-theme">
+  <!-- Top Navigation / SCADA Header Bar -->
+  <header class="scada-header" id="scadaHeader">
+    <div class="header-branding">
+      <div class="brand-logo-container">
+        <div class="scada-beacon active" id="systemBeacon"></div>
+        <div class="brand-titles">
+          <h1 class="brand-title">SIMULAB <span class="highlight">// DC-3000</span></h1>
+          <p class="brand-subtitle">SEPARATELY EXCITED DC MOTOR TEST BENCH • DIGITAL TWIN &amp; SCADA WORKSTATION</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Central Contactor & Safety Controls -->
+    <div class="header-controls">
+      <!-- Main Power Switch -->
+      <div class="control-group-unit" title="Toggle Main DC Contactor Power Supply">
+        <label class="unit-label" for="powerSwitch">MAIN CONTACTOR</label>
+        <button class="scada-toggle-btn" id="powerSwitch" aria-label="Toggle Motor Power">
+          <span class="btn-led off" id="powerLed"></span>
+          <span class="btn-text" id="powerBtnText">START MOTOR</span>
+        </button>
+      </div>
+
+      <!-- 3-Point Starter Bypass Toggle -->
+      <div class="control-group-unit" title="Enable 3-Point Starter to limit starting current surge">
+        <label class="unit-label" for="starterToggle">3-POINT STARTER</label>
+        <button class="scada-toggle-btn active-state" id="starterToggle" aria-label="Toggle 3-Point Starter">
+          <span class="btn-led on" id="starterLed"></span>
+          <span class="btn-text" id="starterBtnText">STARTER: ENGAGED</span>
+        </button>
+      </div>
+
+      <!-- Auto-Breaker Trip Toggle -->
+      <div class="control-group-unit" title="Enable Automatic Trip Circuit Breaker for Overcurrent / Overspeed">
+        <label class="unit-label" for="breakerToggle">AUTO BREAKER</label>
+        <button class="scada-toggle-btn active-state" id="breakerToggle" aria-label="Toggle Auto Breaker">
+          <span class="btn-led on" id="breakerLed"></span>
+          <span class="btn-text" id="breakerBtnText">RELAY: ARMED</span>
+        </button>
+      </div>
+
+      <!-- Audio Synthesizer Toggle -->
+      <div class="control-group-unit" title="Toggle Web Audio API synthesized motor hum and alarms">
+        <label class="unit-label" for="audioToggle">ACOUSTIC SYNTH</label>
+        <button class="scada-icon-btn" id="audioToggle" aria-label="Toggle Motor Hum Audio">
+          <svg class="icon-svg" id="soundIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <span id="audioStatusText">AUDIO: ON</span>
+        </button>
+      </div>
+
+      <!-- Breaker Reset Button -->
+      <div class="control-group-unit" title="Reset Tripped Circuit Breaker">
+        <label class="unit-label" for="resetBreakerBtn">RELAY RESET</label>
+        <button class="scada-action-btn neutral" id="resetBreakerBtn" disabled aria-label="Reset Tripped Breaker">
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+          RESET
+        </button>
+      </div>
+
+      <!-- Emergency Stop Button -->
+      <div class="control-group-unit" title="Emergency Stop - Instantly cut all contactors and dump kinetic energy">
+        <label class="unit-label">E-STOP</label>
+        <button class="scada-estop-btn" id="estopBtn" aria-label="Emergency Stop Motor">
+          <span class="estop-core">E-STOP</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- System Status Badge -->
+    <div class="header-status-badge">
+      <div class="status-indicator-pill normal" id="mainStatusPill">
+        <span class="pill-dot" id="pillDot"></span>
+        <span class="pill-label" id="pillStatusText">STANDBY // READY</span>
+      </div>
+      <div class="status-clock" id="clockDisplay">00:00:00.00</div>
+    </div>
+  </header>
+
+  <!-- Real-Time Safety & Protection Relays Warning Banner (Dynamic) -->
+  <aside class="safety-banner-wrapper hidden" id="safetyBanner" role="alert" aria-live="assertive">
+    <div class="safety-banner-content">
+      <div class="banner-icon-container">
+        <svg class="banner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      </div>
+      <div class="banner-text-details">
+        <h2 class="banner-title" id="bannerFaultTitle">CRITICAL SAFETY RELAY ALARM</h2>
+        <p class="banner-desc" id="bannerFaultDesc">Armature current exceeded safe operating limit. Circuit breaker tripped.</p>
+      </div>
+      <div class="banner-actions">
+        <button class="banner-action-btn" id="bannerResetBtn">RESET BREAKER</button>
+        <button class="banner-dismiss-btn" id="bannerDismissBtn" title="Dismiss Alert">&times;</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Workstation Viewport Layout -->
+  <main class="scada-viewport-grid">
+    
+    <!-- ========================================================================= -->
+    <!-- LEFT COLUMN: CONTROLS & GUIDED LAB EXPERIMENTS                            -->
+    <!-- ========================================================================= -->
+    <aside class="viewport-col col-controls" aria-label="Motor Controls and Experiments">
+      
+      <!-- Guided Experiments Bar -->
+      <section class="card scada-panel guided-panel">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <h2 class="panel-title">GUIDED LAB PRESETS</h2>
+          </div>
+          <span class="panel-tag cyan">INTERACTIVE</span>
+        </div>
+        <div class="guided-btn-grid">
+          <button class="guided-preset-btn active" id="presetExp1" data-preset="armature">
+            <span class="preset-num">01</span>
+            <div class="preset-meta">
+              <span class="preset-title">Armature Voltage Control</span>
+              <span class="preset-sub">Speed vs Va (Constant Field)</span>
+            </div>
+          </button>
+          <button class="guided-preset-btn" id="presetExp2" data-preset="field">
+            <span class="preset-num">02</span>
+            <div class="preset-meta">
+              <span class="preset-title">Field Weakening &amp; Runaway</span>
+              <span class="preset-sub">Hyperbolic Speed vs If Curve</span>
+            </div>
+          </button>
+          <button class="guided-preset-btn" id="presetExp3" data-preset="load">
+            <span class="preset-num">03</span>
+            <div class="preset-meta">
+              <span class="preset-title">Mechanical Load Test</span>
+              <span class="preset-sub">Speed Regulation &amp; Current Ia</span>
+            </div>
+          </button>
+          <button class="guided-preset-btn" id="presetExp4" data-preset="starting">
+            <span class="preset-num">04</span>
+            <div class="preset-meta">
+              <span class="preset-title">DOL Surge vs. Starter</span>
+              <span class="preset-sub">Inrush Transient Comparison</span>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- 1. Armature Voltage Control Card -->
+      <section class="card scada-panel control-card" id="cardArmatureControl">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <span class="control-dot cyan"></span>
+            <h2 class="panel-title">ARMATURE VOLTAGE (<span class="code-sym">Va</span>)</h2>
+          </div>
+          <div class="control-badge cyan">
+            <span class="badge-value" id="valVaDisplay">240.0</span> <span class="badge-unit">V</span>
+          </div>
+        </div>
+        
+        <div class="slider-row">
+          <input type="range" class="scada-range cyan-slider" id="sliderVa" min="0" max="300" step="1" value="240" aria-label="Armature Voltage Slider">
+          <div class="slider-ticks">
+            <span class="tick-label">0V</span>
+            <span class="tick-label">60V</span>
+            <span class="tick-label">120V</span>
+            <span class="tick-label">180V</span>
+            <span class="tick-label rated" title="Rated Voltage: 240V">240V ★</span>
+            <span class="tick-label danger" title="Overvoltage: 300V">300V</span>
+          </div>
+        </div>
+
+        <div class="step-btn-bar">
+          <div class="step-group">
+            <button class="step-btn" id="stepVaMinus10" title="Step -10V">-10V</button>
+            <button class="step-btn" id="stepVaMinus1" title="Step -1V">-1V</button>
+            <button class="step-btn" id="stepVaPlus1" title="Step +1V">+1V</button>
+            <button class="step-btn" id="stepVaPlus10" title="Step +10V">+10V</button>
+          </div>
+          <div class="preset-pills">
+            <button class="pill-btn" data-va="0">0V</button>
+            <button class="pill-btn" data-va="120">120V</button>
+            <button class="pill-btn active" data-va="240">240V (Rated)</button>
+            <button class="pill-btn danger" data-va="300">300V</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Field Excitation Current Card -->
+      <section class="card scada-panel control-card" id="cardFieldControl">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <span class="control-dot amber"></span>
+            <h2 class="panel-title">FIELD CURRENT (<span class="code-sym">If</span>)</h2>
+          </div>
+          <div class="control-badge amber">
+            <span class="badge-value" id="valIfDisplay">1.50</span> <span class="badge-unit">A</span>
+          </div>
+        </div>
+        
+        <div class="slider-row">
+          <input type="range" class="scada-range amber-slider" id="sliderIf" min="0.00" max="2.50" step="0.01" value="1.50" aria-label="Field Current Slider">
+          <div class="slider-ticks">
+            <span class="tick-label danger" title="Critical Runaway Zone: 0.00A - 0.25A">0.0A ⚠️</span>
+            <span class="tick-label warning">0.5A</span>
+            <span class="tick-label">1.0A</span>
+            <span class="tick-label rated" title="Rated Field Current: 1.50A">1.5A ★</span>
+            <span class="tick-label">2.0A</span>
+            <span class="tick-label">2.5A</span>
+          </div>
+        </div>
+
+        <div class="step-btn-bar">
+          <div class="step-group">
+            <button class="step-btn" id="stepIfMinus10" title="Step -0.10A">-0.10A</button>
+            <button class="step-btn" id="stepIfMinus1" title="Step -0.01A">-0.01A</button>
+            <button class="step-btn" id="stepIfPlus1" title="Step +0.01A">+0.01A</button>
+            <button class="step-btn" id="stepIfPlus10" title="Step +0.10A">+0.10A</button>
+          </div>
+          <div class="preset-pills">
+            <button class="pill-btn danger" data-if="0.25" title="Danger Runaway Test">0.25A ⚠️</button>
+            <button class="pill-btn" data-if="1.00">1.00A</button>
+            <button class="pill-btn active" data-if="1.50">1.50A (Rated)</button>
+            <button class="pill-btn" data-if="2.20">2.20A</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Mechanical Dynamometer Load Card -->
+      <section class="card scada-panel control-card" id="cardLoadControl">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <span class="control-dot emerald"></span>
+            <h2 class="panel-title">DYNAMOMETER LOAD (<span class="code-sym">Tload</span>)</h2>
+          </div>
+          <div class="control-badge emerald">
+            <span class="badge-value" id="valLoadDisplay">0.0</span> <span class="badge-unit">Nm</span>
+          </div>
+        </div>
+        
+        <div class="slider-row">
+          <input type="range" class="scada-range emerald-slider" id="sliderLoad" min="0.0" max="50.0" step="0.5" value="0.0" aria-label="Mechanical Dynamometer Load Slider">
+          <div class="slider-ticks">
+            <span class="tick-label">0 Nm</span>
+            <span class="tick-label">12.5 Nm</span>
+            <span class="tick-label rated" title="Rated Load: 25.0 Nm">25 Nm ★</span>
+            <span class="tick-label warning">37.5 Nm</span>
+            <span class="tick-label danger" title="Severe Overload / Stall: 50.0 Nm">50 Nm</span>
+          </div>
+        </div>
+
+        <div class="step-btn-bar">
+          <div class="step-group">
+            <button class="step-btn" id="stepLoadMinus5" title="Step -5.0 Nm">-5 Nm</button>
+            <button class="step-btn" id="stepLoadMinus1" title="Step -1.0 Nm">-1 Nm</button>
+            <button class="step-btn" id="stepLoadPlus1" title="Step +1.0 Nm">+1 Nm</button>
+            <button class="step-btn" id="stepLoadPlus5" title="Step +5.0 Nm">+5 Nm</button>
+          </div>
+          <div class="preset-pills">
+            <button class="pill-btn active" data-load="0.0">No Load (0)</button>
+            <button class="pill-btn" data-load="12.5">50% (12.5)</button>
+            <button class="pill-btn" data-load="25.0">Full (25.0)</button>
+            <button class="pill-btn danger" data-load="42.0">Overload (42)</button>
+          </div>
+        </div>
+      </section>
+
+    </aside>
+
+    <!-- ========================================================================= -->
+    <!-- CENTER COLUMN: INTERACTIVE MOTOR VISUALIZER & CIRCUIT SCHEMATIC          -->
+    <!-- ========================================================================= -->
+    <section class="viewport-col col-visualizer" aria-label="Motor Physical & Circuit Visualizer">
+      <div class="card scada-panel visualizer-panel">
+        
+        <!-- Visualizer Mode Tabs Header -->
+        <div class="panel-header visualizer-header">
+          <div class="visualizer-tabs-container" role="tablist">
+            <button class="vis-tab-btn active" id="tabVisPhysical" role="tab" aria-selected="true" data-mode="physical">
+              <svg class="vis-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              VIEW A: MOTOR CUTAWAY &amp; DYNAMOMETER
+            </button>
+            <button class="vis-tab-btn" id="tabVisSchematic" role="tab" aria-selected="false" data-mode="schematic">
+              <svg class="vis-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+              </svg>
+              VIEW B: INTERACTIVE EQUIVALENT CIRCUIT
+            </button>
+          </div>
+          <div class="vis-hud-badge">
+            <span class="hud-dot pulsing"></span>
+            <span class="hud-fps" id="visFpsDisplay">60.0 FPS</span>
+          </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="canvas-stage-wrapper">
+          <canvas id="motorCanvas" width="760" height="480"></canvas>
+          <div class="canvas-overlay-hud" id="canvasOverlayHud">
+            <div class="hud-metric">
+              <span class="hud-k">ANGULAR VELOCITY</span>
+              <span class="hud-v" id="hudOmega">0.0 rad/s</span>
+            </div>
+            <div class="hud-metric">
+              <span class="hud-k">MAGNETIC FLUX Φ</span>
+              <span class="hud-v" id="hudFlux">1.69 Wb</span>
+            </div>
+            <div class="hud-metric">
+              <span class="hud-k">ROTOR SPARK LEVEL</span>
+              <span class="hud-v" id="hudSparks">SAFE (NONE)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visualizer Footer Strip -->
+        <div class="visualizer-footer-strip">
+          <div class="vis-subgauge">
+            <span class="subgauge-title">STATOR FLUX DENSITY:</span>
+            <div class="scada-progress-bar">
+              <div class="progress-fill amber-glow" id="fluxFillBar" style="width: 67%;"></div>
+            </div>
+            <span class="subgauge-val" id="fluxPercentVal">67.5%</span>
+          </div>
+
+          <div class="vis-subgauge">
+            <span class="subgauge-title">ARMATURE THERMAL I²R:</span>
+            <div class="scada-progress-bar">
+              <div class="progress-fill emerald-glow" id="thermalFillBar" style="width: 15%;"></div>
+            </div>
+            <span class="subgauge-val" id="thermalPercentVal">15.2%</span>
+          </div>
+
+          <div class="vis-subgauge">
+            <span class="subgauge-title">STARTER RHEOSTAT:</span>
+            <div class="scada-progress-bar">
+              <div class="progress-fill cyan-glow" id="rheoFillBar" style="width: 0%;"></div>
+            </div>
+            <span class="subgauge-val" id="rheoVal">0.0 Ω</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- RIGHT COLUMN: DIGITAL SCADA TELEMETRY & MULTI-TABBED GRAPHS              -->
+    <!-- ========================================================================= -->
+    <section class="viewport-col col-telemetry" aria-label="Telemetry Cards and Characteristics">
+      
+      <!-- 6 Primary SCADA Digital Telemetry Cards (2x3 Grid) -->
+      <div class="telemetry-card-grid">
+        
+        <!-- Speed (RPM) Card -->
+        <article class="card telemetry-card cyan-border" id="cardSpeed">
+          <div class="card-head">
+            <span class="tel-label">ROTOR SPEED</span>
+            <span class="tel-sym">[ N ]</span>
+          </div>
+          <div class="card-body">
+            <div class="tel-numeric cyan-num" id="readoutSpeed">0</div>
+            <span class="tel-unit">RPM</span>
+          </div>
+          <div class="card-progress">
+            <div class="progress-track">
+              <div class="progress-fill cyan-fill" id="progSpeed" style="width: 0%;"></div>
+              <div class="rated-marker" style="left: 50%;" title="Rated Base Speed: 1500 RPM"></div>
+            </div>
+            <div class="card-foot-meta">
+              <span>0</span>
+              <span class="rated-txt">1500 ★</span>
+              <span>3000</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Armature Current (Ia) Card -->
+        <article class="card telemetry-card emerald-border" id="cardIa">
+          <div class="card-head">
+            <span class="tel-label">ARMATURE CURRENT</span>
+            <span class="tel-sym">[ Ia ]</span>
+          </div>
+          <div class="card-body">
+            <div class="tel-numeric emerald-num" id="readoutIa">0.00</div>
+            <span class="tel-unit">A</span>
+          </div>
+          <div class="card-progress">
+            <div class="progress-track">
+              <div class="progress-fill emerald-fill" id="progIa" style="width: 0%;"></div>
+              <div class="rated-marker" style="left: 40%;" title="Rated Current: 20 A"></div>
+              <div class="danger-marker" style="left: 50%;" title="Overcurrent Warning: 25 A"></div>
+            </div>
+            <div class="card-foot-meta">
+              <span>0A</span>
+              <span class="rated-txt">20A ★</span>
+              <span class="danger-txt">50A</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Field Current (If) Card -->
+        <article class="card telemetry-card amber-border" id="cardIf">
+          <div class="card-head">
+            <span class="tel-label">FIELD CURRENT</span>
+            <span class="tel-sym">[ If ]</span>
+          </div>
+          <div class="card-body">
+            <div class="tel-numeric amber-num" id="readoutIf">1.50</div>
+            <span class="tel-unit">A</span>
+          </div>
+          <div class="card-progress">
+            <div class="progress-track">
+              <div class="progress-fill amber-fill" id="progIf" style="width: 60%;"></div>
+              <div class="rated-marker" style="left: 60%;" title="Rated Field: 1.50 A"></div>
+            </div>
+            <div class="card-foot-meta">
+              <span>0A</span>
+              <span class="rated-txt">1.5A ★</span>
+              <span>2.5A</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Armature Voltage (Va) Card -->
+        <article class="card telemetry-card cyan-border" id="cardVa">
+          <div class="card-head">
+            <span class="tel-label">ARMATURE VOLTS</span>
+            <span class="tel-sym">[ Va ]</span>
+          </div>
+          <div class="card-body">
+            <div class="tel-numeric cyan-num" id="readoutVa">240.0</div>
+            <span class="tel-unit">V</span>
+          </div>
+          <div class="card-progress">
+            <div class="progress-track">
+              <div class="progress-fill cyan-fill" id="progVa" style="width: 80%;"></div>
+              <div class="rated-marker" style="left: 80%;" title="Rated: 240V"></div>
+            </div>
+            <div class="card-foot-meta">
+              <span>0V</span>
+              <span class="rated-txt">240V ★</span>
+              <span>300V</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Electromagnetic Torque (Te) Card -->
+        <article class="card telemetry-card purple-border" id="cardTe">
+          <div class="card-head">
+            <span class="tel-label">ELECTROMAGNETIC TORQUE</span>
+            <span class="tel-sym">[ Te ]</span>
+          </div>
+          <div class="card-body">
+            <div class="tel-numeric purple-num" id="readoutTe">0.00</div>
+            <span class="tel-unit">Nm</span>
+          </div>
+          <div class="card-progress">
+            <div class="progress-track">
+              <div class="progress-fill purple-fill" id="progTe" style="width: 0%;"></div>
+              <div class="rated-marker" style="left: 41.6%;" title="Rated: 25.0 Nm"></div>
+            </div>
+            <div class="card-foot-meta">
+              <span>0 Nm</span>
+              <span class="rated-txt">25 Nm ★</span>
+              <span>60 Nm</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Input Electrical Power (Pin) Card -->
+        <article class="card telemetry-card amber-border" id="cardPin">
+          <div class="card-head">
+            <span class="tel-label">TOTAL INPUT POWER</span>
+            <span class="tel-sym">[ Pin ]</span>
+          </div>
+          <div class="card-body">
+            <div class="tel-numeric amber-num" id="readoutPin">270</div>
+            <span class="tel-unit">W</span>
+          </div>
+          <div class="card-progress">
+            <div class="progress-track">
+              <div class="progress-fill amber-fill" id="progPin" style="width: 4%;"></div>
+              <div class="rated-marker" style="left: 68%;" title="Rated Pin: 5100 W"></div>
+            </div>
+            <div class="card-foot-meta">
+              <span>0 kW</span>
+              <span class="rated-txt">5.1 kW ★</span>
+              <span>7.5 kW</span>
+            </div>
+          </div>
+        </article>
+
+      </div>
+
+      <!-- Secondary Telemetry Badges Strip -->
+      <div class="secondary-telemetry-strip">
+        <div class="sec-badge" title="Back Electromotive Force (Induced in Armature)">
+          <span class="sec-label">BACK EMF (Eb):</span>
+          <span class="sec-val cyan-txt" id="readoutEb">0.0 V</span>
+        </div>
+        <div class="sec-badge" title="Copper Resistive Losses (Ia²Ra + If²Rf)">
+          <span class="sec-label">COPPER LOSS (Pcu):</span>
+          <span class="sec-val danger-txt" id="readoutPcu">270.0 W</span>
+        </div>
+        <div class="sec-badge" title="Shaft Mechanical Output Power (Tload * omega)">
+          <span class="sec-label">SHAFT POWER (Pout):</span>
+          <span class="sec-val emerald-txt" id="readoutPout">0.0 W</span>
+        </div>
+        <div class="sec-badge" title="Electromechanical Conversion Efficiency (Pout / Pin * 100)">
+          <span class="sec-label">EFFICIENCY (η):</span>
+          <span class="sec-val" id="readoutEff">0.0 %</span>
+        </div>
+      </div>
+
+      <!-- Multi-Tabbed Interactive Canvas Graph Plotter -->
+      <div class="card scada-panel graph-panel">
+        
+        <!-- Graph Navigation Header -->
+        <div class="graph-header-tabs" role="tablist">
+          <button class="graph-tab-btn active" id="tabGraph1" role="tab" aria-selected="true" data-tab="1">
+            TAB 1: SPEED vs. Va
+          </button>
+          <button class="graph-tab-btn" id="tabGraph2" role="tab" aria-selected="false" data-tab="2">
+            TAB 2: SPEED vs. If
+          </button>
+          <button class="graph-tab-btn" id="tabGraph3" role="tab" aria-selected="false" data-tab="3">
+            TAB 3: LOAD vs. Ia &amp; SPEED
+          </button>
+          <button class="graph-tab-btn" id="tabGraph4" role="tab" aria-selected="false" data-tab="4">
+            TAB 4: LIVE OSCILLOSCOPE
+          </button>
+        </div>
+
+        <!-- Graph Sub-Toolbar -->
+        <div class="graph-sub-toolbar">
+          <div class="graph-legend-group" id="graphLegend">
+            <span class="legend-chip cyan"><span class="legend-dot"></span> <span id="legendLabel1">Speed N (RPM)</span></span>
+            <span class="legend-chip dashed"><span class="legend-line"></span> Theoretical Reference</span>
+            <span class="legend-chip emerald hidden" id="legendChip2"><span class="legend-dot"></span> Armature Current Ia (A)</span>
+            <span class="legend-chip amber hidden" id="legendChip3"><span class="legend-dot"></span> Torque (Nm)</span>
+          </div>
+          <div class="graph-action-btns">
+            <button class="graph-btn" id="btnToggleTheoretical" title="Toggle Theoretical Reference Curve">
+              <span>REF CURVE: ON</span>
+            </button>
+            <button class="graph-btn" id="btnClearPlotPoints" title="Clear recorded points from the active graph">
+              <span>CLEAR POINTS</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Canvas Plotter Stage -->
+        <div class="graph-canvas-container">
+          <canvas id="graphCanvas" width="760" height="300"></canvas>
+          <div class="graph-tooltip" id="graphTooltip"></div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- LIVE ENGINEERING INSIGHT BANNER                                           -->
+  <!-- ========================================================================= -->
+  <section class="engineering-insight-bar" aria-label="Live Electrical Engineering Insight">
+    <div class="insight-badge">
+      <svg class="insight-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+      <span>ENGINEERING INSIGHT</span>
+    </div>
+    <div class="insight-body" id="insightText">
+      Motor is currently stationary. With Main Contactor open, Back EMF (Eb) is 0 V. When starting, the 3-Point Starter will insert external resistance Rext to suppress the 300A inrush current.
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- BOTTOM SECTION: VIRTUAL LAB OBSERVATIONS SHEET & TABLE                    -->
+  <!-- ========================================================================= -->
+  <section class="scada-panel observation-panel" aria-label="Laboratory Observation Sheet">
+    <div class="panel-header observation-header">
+      <div class="obs-title-group">
+        <div class="panel-title-wrap">
+          <svg class="panel-icon emerald-txt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <line x1="9" y1="15" x2="15" y2="15"></line>
+          </svg>
+          <h2 class="panel-title">RESULTS &amp; OBSERVATIONS LAB SHEET</h2>
+        </div>
+        <span class="obs-counter-pill" id="obsCountBadge">0 READINGS RECORDED</span>
+      </div>
+
+      <!-- Action Toolbar -->
+      <div class="obs-toolbar">
+        <button class="obs-btn primary" id="btnRecordObservation" title="Take an instantaneous snapshot (Shortcut: Spacebar)">
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          RECORD READING <kbd class="kbd-hint">SPACE</kbd>
+        </button>
+
+        <button class="obs-btn accent" id="btnAutoSweep" title="Automatically perform a 6-step sweep of the active parameter">
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          AUTO-SWEEP &amp; PLOT
+        </button>
+
+        <button class="obs-btn secondary" id="btnExportCsv" title="Export all logged readings to RFC-4180 CSV">
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          EXPORT CSV
+        </button>
+
+        <button class="obs-btn secondary" id="btnPrintReport" title="Print formal SCADA laboratory test report">
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          PRINT REPORT
+        </button>
+
+        <button class="obs-btn danger" id="btnClearTable" title="Clear all logged table observations">
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          CLEAR
+        </button>
+      </div>
+    </div>
+
+    <!-- Analytical Highlight Metrics Pill Bar -->
+    <div class="obs-analytical-bar" id="obsAnalyticalBar">
+      <div class="ana-stat">
+        <span class="ana-label">PEAK EFFICIENCY (η_max):</span>
+        <span class="ana-val" id="anaPeakEff">—</span>
+      </div>
+      <div class="ana-stat">
+        <span class="ana-label">SPEED REGULATION (ΔN/N_fl):</span>
+        <span class="ana-val" id="anaRegulation">—</span>
+      </div>
+      <div class="ana-stat">
+        <span class="ana-label">AUTO-SWEEP STATUS:</span>
+        <span class="ana-val" id="anaSweepStatus">IDLE</span>
+      </div>
+    </div>
+
+    <!-- Scrollable High-Density SCADA Data Table -->
+    <div class="table-scroll-container">
+      <table class="scada-table" id="observationTable">
+        <thead>
+          <tr>
+            <th class="col-sr">#</th>
+            <th class="col-time">TIME</th>
+            <th class="col-mode">EXPERIMENT MODE</th>
+            <th class="col-va">Va (V)</th>
+            <th class="col-if">If (A)</th>
+            <th class="col-load">LOAD (Nm)</th>
+            <th class="col-speed">SPEED (RPM)</th>
+            <th class="col-ia">Ia (A)</th>
+            <th class="col-eb">Eb (V)</th>
+            <th class="col-te">TORQUE (Nm)</th>
+            <th class="col-pin">Pin (W)</th>
+            <th class="col-pout">Pout (W)</th>
+            <th class="col-pcu">Pcu (W)</th>
+            <th class="col-eff">EFF (η %)</th>
+            <th class="col-status">STATUS</th>
+            <th class="col-del">DEL</th>
+          </tr>
+        </thead>
+        <tbody id="observationTableBody">
+          <tr class="empty-row" id="emptyTableMessage">
+            <td colspan="16">
+              <div class="empty-placeholder">
+                <svg class="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M9 17h6M9 13h6M9 9h6M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h10l6 6v10a2 2 0 0 1-2 2z"></path>
+                </svg>
+                <span>No lab readings recorded yet. Click <strong>"RECORD READING"</strong> or press <kbd>SPACEBAR</kbd> to record the motor operating point, or run <strong>"AUTO-SWEEP &amp; PLOT"</strong>.</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+
+  <!-- Printable Lab Report Header Template (Visible only during window.print()) -->
+  <div class="print-only-report-header" id="printReportHeader">
+    <div class="print-title-row">
+      <h2>ELECTRICAL MACHINES LABORATORY REPORT</h2>
+      <h3>DEPARTMENT OF ELECTRICAL &amp; ELECTRONICS ENGINEERING</h3>
+    </div>
+    <div class="print-meta-grid">
+      <div><strong>Apparatus:</strong> DC-3000 Separately Excited DC Motor Test Bench</div>
+      <div><strong>Date &amp; Time:</strong> <span id="printDate">2026-10-14</span></div>
+      <div><strong>Motor Rating:</strong> 5 HP (3.7 kW), 240 V, 20 A, 1500 RPM Base Speed</div>
+      <div><strong>Test Mode:</strong> Comprehensive Characteristics &amp; Efficiency Analysis</div>
+    </div>
+  </div>
+
+  <!-- Footer Info & Keybindings Hint -->
+  <footer class="scada-footer">
+    <div class="footer-shortcuts">
+      <span>SHORTCUTS:</span>
+      <kbd>SPACE</kbd> Record Reading &bull;
+      <kbd>P</kbd> Contactor On/Off &bull;
+      <kbd>E</kbd> E-Stop &bull;
+      <kbd>S</kbd> 3-Point Starter &bull;
+      <kbd>M</kbd> Mute Audio &bull;
+      <kbd>R</kbd> Reset Breaker
+    </div>
+    <div class="footer-build">
+      <span>SIMULAB v3.4.2 // SCADA PHYSICS ENGINE: 60 FPS ODE SOLVER</span>
+    </div>
+  </footer>
+
+  <!-- Application Logic -->
+  <script src="script.js"></script>
+</body>
+</html>
